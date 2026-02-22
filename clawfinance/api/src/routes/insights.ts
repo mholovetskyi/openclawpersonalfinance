@@ -39,11 +39,11 @@ router.patch("/:id", async (req, res) => {
       return;
     }
 
-    const timestampCol = status === "viewed" ? "viewed_at = NOW()," : status === "dismissed" ? "dismissed_at = NOW()," : "";
+    const timestampCol = status === "viewed" ? ", viewed_at = NOW()" : status === "dismissed" ? ", dismissed_at = NOW()" : "";
 
     const result = await pool.query(
       `UPDATE insights
-       SET status = $1, ${timestampCol} updated_at = NOW()
+       SET status = $1${timestampCol}
        WHERE id = $2
        RETURNING *`,
       [status, id]

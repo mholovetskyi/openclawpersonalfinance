@@ -8,6 +8,7 @@ import accountsRouter from "./routes/accounts.js";
 import transactionsRouter from "./routes/transactions.js";
 import insightsRouter from "./routes/insights.js";
 import networthRouter from "./routes/networth.js";
+import budgetsRouter from "./routes/budgets.js";
 
 const app = express();
 const PORT = Number(process.env.API_PORT ?? 3001);
@@ -24,9 +25,10 @@ app.use("/api/accounts", accountsRouter);
 app.use("/api/transactions", transactionsRouter);
 app.use("/api/insights", insightsRouter);
 app.use("/api/networth", networthRouter);
+app.use("/api/budgets", budgetsRouter);
 
-// Phase 1 stubs — return 501 with a helpful message
-const STUB_ROUTES = ["/api/holdings", "/api/portfolio", "/api/budgets", "/api/tax", "/api/research"];
+// Phase 3+ stubs — return 501 with a helpful message
+const STUB_ROUTES = ["/api/holdings", "/api/portfolio", "/api/tax", "/api/research"];
 for (const path of STUB_ROUTES) {
   app.use(path, (_req, res) => res.status(501).json({ error: `${path} not yet implemented (Phase 2+)` }));
 }
