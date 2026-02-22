@@ -138,7 +138,7 @@ export default function ChatPanel() {
 
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-22 right-6 z-50 w-96 max-h-[600px] flex flex-col bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="fixed bottom-20 right-6 z-50 w-96 max-h-[600px] flex flex-col bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900">
             <div className="flex items-center gap-2">
