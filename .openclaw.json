@@ -1,8 +1,4 @@
 {
-  // ClawFinance workspace configuration for OpenClaw.
-  // Place this file at the root of the openclawpersonalfinance workspace.
-  // OpenClaw picks it up automatically when running from this directory.
-
   "mcpServers": {
     "plaid": {
       "command": "node",
@@ -32,13 +28,6 @@
       "command": "node",
       "args": ["./clawfinance/mcp-servers/mcp-sec/dist/index.js"]
     },
-    "taxbandits": {
-      "command": "node",
-      "args": ["./clawfinance/mcp-servers/mcp-taxbandits/dist/index.js"],
-      "env": {
-        "TAXBANDITS_API_KEY": "${TAXBANDITS_API_KEY}"
-      }
-    },
     "azure-doc-intel": {
       "command": "node",
       "args": ["./clawfinance/mcp-servers/mcp-azure-doc-intel/dist/index.js"],
@@ -51,15 +40,17 @@
       "command": "node",
       "args": ["./clawfinance/mcp-servers/mcp-twitter/dist/index.js"],
       "env": {
-        "TWITTER_BEARER_TOKEN": "${TWITTER_BEARER_TOKEN}"
+        "TWITTER_API_KEY": "${TWITTER_API_KEY}",
+        "TWITTER_API_SECRET": "${TWITTER_API_SECRET}",
+        "TWITTER_ACCESS_TOKEN": "${TWITTER_ACCESS_TOKEN}",
+        "TWITTER_ACCESS_SECRET": "${TWITTER_ACCESS_SECRET}"
       }
     },
     "altdata": {
       "command": "node",
       "args": ["./clawfinance/mcp-servers/mcp-altdata/dist/index.js"],
       "env": {
-        "BSM_API_KEY": "${BSM_API_KEY}",
-        "SENSOR_TOWER_API_KEY": "${SENSOR_TOWER_API_KEY}"
+        "SERPAPI_KEY": "${SERPAPI_KEY}"
       }
     }
   },
@@ -70,7 +61,11 @@
       "name": "ClawFinance",
       "skills": [
         "skill-finance-orchestrator",
-        "skill-data-ingestion"
+        "skill-data-ingestion",
+        "skill-budget",
+        "skill-investment",
+        "skill-tax",
+        "skill-research"
       ]
     }
   },
@@ -81,13 +76,49 @@
       {
         "id": "bank-sync",
         "schedule": "0 */6 * * *",
-        "task": "Run bank sync: python3 skills/skill-data-ingestion/scripts/sync_plaid.py",
+        "task": "Sync bank transactions: run python3 skills/skill-data-ingestion/scripts/sync_plaid.py, then python3 skills/skill-budget/scripts/categorize_transactions.py. Log result.",
+        "agentId": "finance-orchestrator"
+      },
+      {
+        "id": "portfolio-sync",
+        "schedule": "0 */4 * * *",
+        "task": "Sync portfolio holdings and prices: run python3 skills/skill-data-ingestion/scripts/sync_portfolio.py",
+        "agentId": "finance-orchestrator"
+      },
+      {
+        "id": "budget-check",
+        "schedule": "0 9 * * *",
+        "task": "Run daily budget check: python3 skills/skill-budget/scripts/check_budgets.py. If any category is over budget or has a new recurring charge, post an insight via POST /api/insights.",
+        "agentId": "finance-orchestrator"
+      },
+      {
+        "id": "portfolio-insights",
+        "schedule": "0 8 * * 1-5",
+        "task": "Run portfolio analysis on weekdays: python3 skills/skill-investment/scripts/calc_performance.py and calc_allocation.py. Post any drift or risk insights.",
+        "agentId": "finance-orchestrator"
+      },
+      {
+        "id": "research-sweep",
+        "schedule": "0 7 * * 1-5",
+        "task": "For each holding in the portfolio, check for new SEC filings (get_company_filings), insider transactions (get_insider_transactions), and sentiment shifts (get_sentiment_score). Post alerts via POST /api/insights for any significant findings.",
+        "agentId": "finance-orchestrator"
+      },
+      {
+        "id": "news-sync",
+        "schedule": "0 */8 * * *",
+        "task": "Fetch latest company news for portfolio holdings: python3 skills/skill-data-ingestion/scripts/sync_news.py",
+        "agentId": "finance-orchestrator"
+      },
+      {
+        "id": "tax-estimate-refresh",
+        "schedule": "0 6 1 * *",
+        "task": "Refresh quarterly tax estimate on the 1st of each month: python3 skills/skill-tax/scripts/estimate_liability.py. Post insight if estimated taxes have changed significantly.",
         "agentId": "finance-orchestrator"
       },
       {
         "id": "weekly-summary",
         "schedule": "0 8 * * 1",
-        "task": "Generate weekly financial summary and present to user",
+        "task": "Generate weekly financial summary every Monday. Check budgets, portfolio performance, and open insights. Present a concise summary to the user covering: net worth change, top spending categories, portfolio return, and any open alerts.",
         "agentId": "finance-orchestrator"
       }
     ]

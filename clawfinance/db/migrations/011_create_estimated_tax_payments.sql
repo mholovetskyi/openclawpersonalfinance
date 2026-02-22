@@ -1,0 +1,11 @@
+CREATE TABLE estimated_tax_payments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000001',
+  year INTEGER NOT NULL,
+  quarter INTEGER NOT NULL CHECK (quarter BETWEEN 1 AND 4),
+  amount_paid DECIMAL(18, 4) NOT NULL,
+  date_paid DATE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE tax_documents ADD COLUMN IF NOT EXISTS state_tax DECIMAL(18, 4);

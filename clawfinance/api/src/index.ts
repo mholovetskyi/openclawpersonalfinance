@@ -9,6 +9,10 @@ import transactionsRouter from "./routes/transactions.js";
 import insightsRouter from "./routes/insights.js";
 import networthRouter from "./routes/networth.js";
 import budgetsRouter from "./routes/budgets.js";
+import portfolioRouter from "./routes/portfolio.js";
+import taxRouter from "./routes/tax.js";
+import researchRouter from "./routes/research.js";
+import chatRouter from "./routes/chat.js";
 
 const app = express();
 const PORT = Number(process.env.API_PORT ?? 3001);
@@ -27,11 +31,18 @@ app.use("/api/insights", insightsRouter);
 app.use("/api/networth", networthRouter);
 app.use("/api/budgets", budgetsRouter);
 
-// Phase 3+ stubs — return 501 with a helpful message
-const STUB_ROUTES = ["/api/holdings", "/api/portfolio", "/api/tax", "/api/research"];
-for (const path of STUB_ROUTES) {
-  app.use(path, (_req, res) => res.status(501).json({ error: `${path} not yet implemented (Phase 2+)` }));
-}
+// Phase 3: Portfolio & Holdings
+app.use("/api/portfolio", portfolioRouter);
+app.use("/api/holdings", portfolioRouter);  // alias — portfolioRouter serves /holdings sub-route
+
+// Phase 4: Tax
+app.use("/api/tax", taxRouter);
+
+// Phase 5: Research
+app.use("/api/research", researchRouter);
+
+// Phase 6: Chat
+app.use("/api/chat", chatRouter);
 
 // 404 fallback
 app.use((_req, res) => res.status(404).json({ error: "Not found" }));

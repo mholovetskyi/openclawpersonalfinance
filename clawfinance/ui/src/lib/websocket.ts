@@ -43,3 +43,6 @@ export function off(type: string, handler: WsHandler) {
 
 // Auto-connect on import
 connect();
+
+// Named object for components that prefer method-style usage
+export const wsClient = { on, off };

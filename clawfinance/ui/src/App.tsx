@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Sidebar from "./components/layout/Sidebar.tsx";
 import Header from "./components/layout/Header.tsx";
+import ChatPanel from "./components/layout/ChatPanel.tsx";
 import NetWorthDashboard from "./pages/NetWorthDashboard.tsx";
 import PortfolioView from "./pages/PortfolioView.tsx";
 import TransactionsBudget from "./pages/TransactionsBudget.tsx";
@@ -26,6 +27,8 @@ export default function App() {
           </main>
         </div>
       </div>
+      {/* Floating AI chat panel — always visible */}
+      <ChatPanel />
     </BrowserRouter>
   );
 }

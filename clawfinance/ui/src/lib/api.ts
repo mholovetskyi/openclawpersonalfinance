@@ -26,3 +26,7 @@ export const api = {
   post: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "POST", body: JSON.stringify(body) }),
 };
+
+// Convenience export for components that call apiFetch(path, options?)
+export const apiFetch = <T = unknown>(path: string, options?: RequestInit) =>
+  request<T>(path, options);

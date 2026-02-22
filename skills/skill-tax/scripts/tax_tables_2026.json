@@ -1,0 +1,56 @@
+{
+  "year": 2026,
+  "federal_brackets": {
+    "single": [
+      {"min": 0,      "max": 11600,  "rate": 0.10},
+      {"min": 11600,  "max": 47150,  "rate": 0.12},
+      {"min": 47150,  "max": 100525, "rate": 0.22},
+      {"min": 100525, "max": 191950, "rate": 0.24},
+      {"min": 191950, "max": 243725, "rate": 0.32},
+      {"min": 243725, "max": 609350, "rate": 0.35},
+      {"min": 609350, "max": null,   "rate": 0.37}
+    ],
+    "married_filing_jointly": [
+      {"min": 0,       "max": 23200,  "rate": 0.10},
+      {"min": 23200,   "max": 94300,  "rate": 0.12},
+      {"min": 94300,   "max": 201050, "rate": 0.22},
+      {"min": 201050,  "max": 383900, "rate": 0.24},
+      {"min": 383900,  "max": 487450, "rate": 0.32},
+      {"min": 487450,  "max": 731200, "rate": 0.35},
+      {"min": 731200,  "max": null,   "rate": 0.37}
+    ],
+    "head_of_household": [
+      {"min": 0,      "max": 16550,  "rate": 0.10},
+      {"min": 16550,  "max": 63100,  "rate": 0.12},
+      {"min": 63100,  "max": 100500, "rate": 0.22},
+      {"min": 100500, "max": 191950, "rate": 0.24},
+      {"min": 191950, "max": 243700, "rate": 0.32},
+      {"min": 243700, "max": 609350, "rate": 0.35},
+      {"min": 609350, "max": null,   "rate": 0.37}
+    ]
+  },
+  "long_term_capital_gains_rates": {
+    "single": [
+      {"min": 0,      "max": 44625,  "rate": 0.00},
+      {"min": 44625,  "max": 492300, "rate": 0.15},
+      {"min": 492300, "max": null,   "rate": 0.20}
+    ],
+    "married_filing_jointly": [
+      {"min": 0,       "max": 89250,  "rate": 0.00},
+      {"min": 89250,   "max": 553850, "rate": 0.15},
+      {"min": 553850,  "max": null,   "rate": 0.20}
+    ]
+  },
+  "standard_deduction": {
+    "single": 14600,
+    "married_filing_jointly": 29200,
+    "head_of_household": 21900
+  },
+  "net_investment_income_tax_rate": 0.038,
+  "niit_threshold": {
+    "single": 200000,
+    "married_filing_jointly": 250000
+  },
+  "self_employment_tax_rate": 0.153,
+  "se_income_threshold": 160200
+}

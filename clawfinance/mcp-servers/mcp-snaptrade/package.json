@@ -1,0 +1,16 @@
+{
+  "name": "mcp-snaptrade",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "tsc", "dev": "tsx src/index.ts" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "snaptrade-typescript-sdk": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "tsx": "^4.11.0",
+    "typescript": "^5.4.5"
+  }
+}
