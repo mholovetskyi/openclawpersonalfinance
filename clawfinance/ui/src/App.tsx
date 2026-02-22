@@ -7,6 +7,7 @@ import PortfolioView from "./pages/PortfolioView.tsx";
 import TransactionsBudget from "./pages/TransactionsBudget.tsx";
 import TaxCenter from "./pages/TaxCenter.tsx";
 import ResearchNews from "./pages/ResearchNews.tsx";
+import Settings from "./pages/Settings.tsx";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
               <Route path="/transactions" element={<TransactionsBudget />} />
               <Route path="/tax" element={<TaxCenter />} />
               <Route path="/research" element={<ResearchNews />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>

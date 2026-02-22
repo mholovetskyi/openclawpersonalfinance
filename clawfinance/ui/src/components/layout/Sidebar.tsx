@@ -5,6 +5,7 @@ import {
   CreditCard,
   FileText,
   Newspaper,
+  Settings,
 } from "lucide-react";
 
 const NAV = [
@@ -44,9 +45,21 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="px-5 py-4 border-t border-gray-800 text-xs text-gray-600">
-        Phase 1 · Foundation
+      {/* Settings — pinned to bottom */}
+      <div className="px-3 py-3 border-t border-gray-800">
+        <NavLink
+          to="/settings"
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isActive
+                ? "bg-claw-700 text-white"
+                : "text-gray-400 hover:text-white hover:bg-gray-800"
+            }`
+          }
+        >
+          <Settings size={18} />
+          Settings
+        </NavLink>
       </div>
     </aside>
   );

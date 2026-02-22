@@ -6,6 +6,7 @@ const TITLES: Record<string, string> = {
   "/transactions": "Transactions & Budget",
   "/tax": "Tax Center",
   "/research": "Research & News",
+  "/settings": "Settings",
 };
 
 export default function Header() {

@@ -13,6 +13,7 @@ import portfolioRouter from "./routes/portfolio.js";
 import taxRouter from "./routes/tax.js";
 import researchRouter from "./routes/research.js";
 import chatRouter from "./routes/chat.js";
+import healthRouter from "./routes/health.js";
 
 const app = express();
 const PORT = Number(process.env.API_PORT ?? 3001);
@@ -22,6 +23,7 @@ app.use(express.json());
 
 // Health check — no auth required
 app.get("/health", (_req, res) => res.json({ status: "ok", service: "clawfinance-api" }));
+app.use("/api/health", healthRouter);
 
 // All /api routes require auth
 app.use("/api", localAuth);
@@ -33,7 +35,11 @@ app.use("/api/budgets", budgetsRouter);
 
 // Phase 3: Portfolio & Holdings
 app.use("/api/portfolio", portfolioRouter);
-app.use("/api/holdings", portfolioRouter);  // alias — portfolioRouter serves /holdings sub-route
+// /api/holdings maps to the /holdings sub-route on portfolioRouter
+app.get("/api/holdings", (req, res, next) => {
+  req.url = "/holdings";
+  portfolioRouter(req, res, next);
+});
 
 // Phase 4: Tax
 app.use("/api/tax", taxRouter);
