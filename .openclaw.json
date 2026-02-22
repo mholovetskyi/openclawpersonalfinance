@@ -1,0 +1,95 @@
+{
+  // ClawFinance workspace configuration for OpenClaw.
+  // Place this file at the root of the openclawpersonalfinance workspace.
+  // OpenClaw picks it up automatically when running from this directory.
+
+  "mcpServers": {
+    "plaid": {
+      "command": "node",
+      "args": ["./clawfinance/mcp-servers/mcp-plaid/dist/index.js"],
+      "env": {
+        "PLAID_CLIENT_ID": "${PLAID_CLIENT_ID}",
+        "PLAID_SECRET": "${PLAID_SECRET}",
+        "PLAID_ENV": "${PLAID_ENV}"
+      }
+    },
+    "snaptrade": {
+      "command": "node",
+      "args": ["./clawfinance/mcp-servers/mcp-snaptrade/dist/index.js"],
+      "env": {
+        "SNAPTRADE_CLIENT_ID": "${SNAPTRADE_CLIENT_ID}",
+        "SNAPTRADE_CONSUMER_KEY": "${SNAPTRADE_CONSUMER_KEY}"
+      }
+    },
+    "finnhub": {
+      "command": "node",
+      "args": ["./clawfinance/mcp-servers/mcp-finnhub/dist/index.js"],
+      "env": {
+        "FINNHUB_API_KEY": "${FINNHUB_API_KEY}"
+      }
+    },
+    "sec": {
+      "command": "node",
+      "args": ["./clawfinance/mcp-servers/mcp-sec/dist/index.js"]
+    },
+    "taxbandits": {
+      "command": "node",
+      "args": ["./clawfinance/mcp-servers/mcp-taxbandits/dist/index.js"],
+      "env": {
+        "TAXBANDITS_API_KEY": "${TAXBANDITS_API_KEY}"
+      }
+    },
+    "azure-doc-intel": {
+      "command": "node",
+      "args": ["./clawfinance/mcp-servers/mcp-azure-doc-intel/dist/index.js"],
+      "env": {
+        "AZURE_DOC_INTEL_ENDPOINT": "${AZURE_DOC_INTEL_ENDPOINT}",
+        "AZURE_DOC_INTEL_KEY": "${AZURE_DOC_INTEL_KEY}"
+      }
+    },
+    "twitter": {
+      "command": "node",
+      "args": ["./clawfinance/mcp-servers/mcp-twitter/dist/index.js"],
+      "env": {
+        "TWITTER_BEARER_TOKEN": "${TWITTER_BEARER_TOKEN}"
+      }
+    },
+    "altdata": {
+      "command": "node",
+      "args": ["./clawfinance/mcp-servers/mcp-altdata/dist/index.js"],
+      "env": {
+        "BSM_API_KEY": "${BSM_API_KEY}",
+        "SENSOR_TOWER_API_KEY": "${SENSOR_TOWER_API_KEY}"
+      }
+    }
+  },
+
+  "agents": {
+    "default": {
+      "id": "finance-orchestrator",
+      "name": "ClawFinance",
+      "skills": [
+        "skill-finance-orchestrator",
+        "skill-data-ingestion"
+      ]
+    }
+  },
+
+  "cron": {
+    "enabled": true,
+    "jobs": [
+      {
+        "id": "bank-sync",
+        "schedule": "0 */6 * * *",
+        "task": "Run bank sync: python3 skills/skill-data-ingestion/scripts/sync_plaid.py",
+        "agentId": "finance-orchestrator"
+      },
+      {
+        "id": "weekly-summary",
+        "schedule": "0 8 * * 1",
+        "task": "Generate weekly financial summary and present to user",
+        "agentId": "finance-orchestrator"
+      }
+    ]
+  }
+}

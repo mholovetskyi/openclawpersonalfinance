@@ -1,0 +1,6 @@
+.env
+node_modules/
+dist/
+pgdata/
+*.js.map
+.DS_Store
