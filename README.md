@@ -2,7 +2,8 @@
 
 <p align="center">
   <strong>Your local-first, AI-powered personal finance system — built on OpenClaw.</strong><br>
-  Budget tracking · Portfolio analysis · Tax estimation · Market research · Automated insights
+  Budget tracking · Portfolio analysis · Tax estimation · Market research · Automated insights<br><br>
+  <em>One repo. One clone. OpenClaw + ClawFinance ship together.</em>
 </p>
 
 <p align="center">
@@ -93,10 +94,10 @@ cd openclawpersonalfinance
 ### Step 3 — Create your personal settings file
 
 ```bash
-cp .env.example clawfinance/.env
+cp .env.example .env
 ```
 
-Now open the file `clawfinance/.env` in any text editor (Notepad works fine). Find these four lines and fill them in:
+Now open the file `.env` in any text editor (Notepad works fine). Find these four lines and fill them in:
 
 ```
 DB_PASSWORD=          ← Type any password you make up (e.g. MyStrongPass123!)
@@ -116,10 +117,10 @@ Save and close the file.
 ### Step 4 — Run setup
 
 ```bash
-bash clawfinance/scripts/setup.sh
+bash setup.sh
 ```
 
-This may take 2–5 minutes the first time (it's downloading software). When it says **"ClawFinance is ready!"**, you're done.
+This may take 2–5 minutes the first time (it's downloading software). When it says **"ClawFinance is running!"**, you're done.
 
 ### Step 5 — Open the app
 
@@ -133,14 +134,7 @@ Once set up, ClawFinance runs in the background. To start it again after rebooti
 
 ```bash
 cd openclawpersonalfinance
-bash clawfinance/scripts/setup.sh
-```
-
-Or if you prefer, just start Docker Compose manually:
-
-```bash
-cd openclawpersonalfinance/clawfinance
-docker-compose up -d
+docker compose up -d
 ```
 
 Then visit http://localhost:5173.
@@ -159,11 +153,17 @@ Click the **chat button** (bottom-right corner of the app) and ask anything:
 ## Architecture Overview
 
 ```
-openclawpersonalfinance/
-├── clawfinance/                 ← The finance application
+openclawpersonalfinance/         ← THIS REPO — OpenClaw source + ClawFinance on top
+│
+├── src/                         ← OpenClaw core (gateway, channels, skills engine)
+├── packages/                    ← OpenClaw shared packages
+├── extensions/                  ← OpenClaw plugin extensions
+├── apps/                        ← OpenClaw mobile/desktop apps (iOS, Android, macOS)
+│
+├── clawfinance/                 ← ClawFinance — the finance application layer
 │   ├── api/                     ← Express.js REST API (TypeScript, port 3001)
 │   ├── ui/                      ← React + Vite + Tailwind dashboard (port 5173)
-│   ├── db/migrations/           ← PostgreSQL schema (migration files)
+│   ├── db/migrations/           ← PostgreSQL schema (17 migration files)
 │   ├── mcp-servers/             ← 7 MCP data source connectors
 │   │   ├── mcp-plaid/           ← Bank accounts & transactions (Plaid API)
 │   │   ├── mcp-snaptrade/       ← Investment portfolios (SnapTrade)
@@ -173,14 +173,19 @@ openclawpersonalfinance/
 │   │   ├── mcp-twitter/         ← Sentiment analysis (Twitter/X API)
 │   │   └── mcp-altdata/         ← Google Trends, job postings (SerpAPI)
 │   └── scripts/                 ← Setup, validation, and data sync scripts
-├── skills/                      ← OpenClaw agent skills
+│
+├── skills/                      ← OpenClaw agent skills (auto-discovered)
 │   ├── skill-finance-orchestrator/ ← Routes user requests to the right agent
 │   ├── skill-data-ingestion/    ← Plaid/portfolio/news sync
 │   ├── skill-budget/            ← Spending analysis & budget management
 │   ├── skill-investment/        ← Portfolio analysis & tax-loss harvesting
 │   ├── skill-tax/               ← Tax estimation & document processing
 │   └── skill-research/          ← Company research & sentiment
-├── .openclaw.json               ← OpenClaw workspace config (MCP + cron)
+│
+├── .openclaw.json               ← Workspace config: MCP servers + cron jobs
+├── docker-compose.yml           ← All services: ClawFinance + optional OpenClaw
+├── .env.example                 ← Unified config for everything
+├── setup.sh                     ← One-command setup from repo root
 └── README.md                    ← You are here
 ```
 
@@ -199,18 +204,21 @@ openclawpersonalfinance/
 Browser (port 5173)
     │
     ▼
-React UI (Vite / nginx)
+React UI (Vite / nginx)              ← clawfinance/ui/
     │ REST + WebSocket
     ▼
-Express API (port 3001)
-    ├── PostgreSQL (port 5432) — stores all your financial data
-    ├── Redis (port 6379) — caching & real-time pub/sub
-    └── Anthropic API — AI responses for chat & insights
+Express API (port 3001)              ← clawfinance/api/
+    ├── PostgreSQL (port 5432)       ← stores all financial data (17 migrations)
+    ├── Redis (port 6379)            ← caching & real-time pub/sub
+    └── Anthropic API                ← AI responses for chat & insights
 
-OpenClaw (background daemon)
-    ├── Reads .openclaw.json for MCP servers and skills
-    ├── Runs cron jobs (bank sync, portfolio sync, etc.)
-    └── Talks to the API via HTTP to store results
+OpenClaw (pnpm run dev — this repo)
+    ├── .openclaw.json               ← registers 7 MCP servers + 8 cron jobs
+    ├── skills/skill-*/              ← 6 ClawFinance agent skills
+    └── MCP servers (clawfinance/mcp-servers/*/dist/)
+        ├── mcp-plaid, mcp-snaptrade, mcp-finnhub
+        ├── mcp-sec, mcp-azure-doc-intel
+        └── mcp-twitter, mcp-altdata
 ```
 
 ---
@@ -241,10 +249,10 @@ cd openclawpersonalfinance
 ### Step 2 — Create your environment file
 
 ```bash
-cp .env.example clawfinance/.env
+cp .env.example .env
 ```
 
-Then open `clawfinance/.env` in your editor and set **at minimum**:
+Then open `.env` in your editor and set **at minimum**:
 
 ```env
 DB_PASSWORD=pick_a_strong_password_here
@@ -258,7 +266,7 @@ ANTHROPIC_API_KEY=sk-ant-...   # Required for AI agents
 ### Step 3 — Run the automated setup
 
 ```bash
-bash clawfinance/scripts/setup.sh
+bash setup.sh
 ```
 
 This script:
@@ -283,13 +291,12 @@ If you prefer to set things up manually or are troubleshooting:
 ### Start database services
 
 ```bash
-cd clawfinance
-docker-compose up -d postgres redis
+docker compose up -d postgres redis
 ```
 
 Wait for Postgres to be ready:
 ```bash
-docker-compose exec postgres pg_isready -U clawfinance
+docker compose exec postgres pg_isready -U clawfinance
 ```
 
 ### Start the API
@@ -348,8 +355,7 @@ Expected response:
 ## Running with Docker Compose (all services)
 
 ```bash
-cd clawfinance
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 This builds and starts all 4 containers: postgres, redis, api, ui.
@@ -358,11 +364,11 @@ The UI container uses nginx and proxies `/api/` and `/ws` to the API container a
 
 Useful commands:
 ```bash
-docker-compose logs -f api      # API logs
-docker-compose logs -f ui       # UI/nginx logs
-docker-compose ps               # Service status
-docker-compose down             # Stop everything
-docker-compose down -v          # Stop + delete database data (DESTRUCTIVE)
+docker compose logs -f api      # API logs
+docker compose logs -f ui       # UI/nginx logs
+docker compose ps               # Service status
+docker compose down             # Stop everything
+docker compose down -v          # Stop + delete database data (DESTRUCTIVE)
 ```
 
 ---
@@ -371,7 +377,7 @@ docker-compose down -v          # Stop + delete database data (DESTRUCTIVE)
 
 ClawFinance works out of the box with no integrations — but to sync real data you'll need API keys. Open **http://localhost:5173/settings** to configure them interactively.
 
-Alternatively, edit `clawfinance/.env` directly and restart the API (`docker-compose restart api`).
+Alternatively, edit `.env` directly and restart the API (`docker compose restart api`).
 
 ### Anthropic Claude (Required for AI)
 
@@ -1216,7 +1222,7 @@ This section walks you through adding a new external data source to ClawFinance 
 
 ### Step 1 — Add environment variables
 
-Open `clawfinance/.env` and add your API key(s):
+Open `.env` (repo root) and add your API key(s):
 
 ```env
 MYAPI_API_KEY=your_key_here
@@ -1349,7 +1355,8 @@ Open `.openclaw.json` and add your server to the `mcpServers` block:
 
 Restart OpenClaw for it to pick up the new server:
 ```bash
-openclaw restart
+# Ctrl+C to stop, then:
+pnpm run dev
 ```
 
 ---
@@ -1536,6 +1543,27 @@ SELECT ticker, shares, market_value FROM holdings ORDER BY market_value DESC;
 
 ## Development Guide
 
+### Starting services for development
+
+```bash
+# Terminal 1 — ClawFinance services (Postgres, Redis, API, UI)
+docker compose up -d
+
+# Terminal 2 — OpenClaw agent (from repo root)
+pnpm install
+pnpm build
+pnpm run dev
+```
+
+Or for ClawFinance API/UI in watch mode instead of Docker:
+```bash
+# Terminal 2 — API
+cd clawfinance/api && npm install && npm run dev
+
+# Terminal 3 — UI
+cd clawfinance/ui && npm install && npm run dev
+```
+
 ### Project structure
 
 ```
@@ -1600,7 +1628,7 @@ cd clawfinance/api && npm test
 Variables are resolved in this order (highest → lowest):
 
 1. Process environment (e.g., variables already exported in your shell)
-2. `clawfinance/.env` (for local dev)
+2. `.env` at repo root (primary config for both OpenClaw and ClawFinance)
 3. `~/.openclaw/.env` (for daemon mode)
 4. `.openclaw.json` `env` block
 
@@ -1608,7 +1636,7 @@ Variables are resolved in this order (highest → lowest):
 
 ## Cron Jobs & Automation
 
-Once OpenClaw is running (`openclaw start`), these jobs run automatically:
+Once OpenClaw is running (`pnpm run dev` from repo root), these jobs run automatically:
 
 | Job | Schedule | Action |
 |---|---|---|
@@ -1675,7 +1703,7 @@ To add a custom skill, see [Adding a New API Integration — Step 8](#step-8--cr
 
 ### API won't start — "DATABASE_URL is required"
 
-Make sure `clawfinance/.env` exists and `DB_PASSWORD` is set:
+Make sure `.env` exists at the repo root and `DB_PASSWORD` is set:
 
 ```bash
 bash clawfinance/scripts/validate-env.sh
@@ -1735,8 +1763,8 @@ Also check that `CLAWFINANCE_API_KEY` in `.env` matches `VITE_API_KEY` in `.env`
 
 1. Build the server first: `npm run build`
 2. Check `.openclaw.json` references the compiled `dist/index.js` path correctly
-3. Restart OpenClaw: `openclaw restart`
-4. Check logs: `openclaw logs`
+3. Restart OpenClaw: stop with `Ctrl+C` then `pnpm run dev`
+4. Check logs in the terminal where OpenClaw is running
 
 ---
 
@@ -1757,7 +1785,7 @@ Look for `"anthropic": { "configured": true }` in the `integrations` block.
 1. Confirm `PLAID_CLIENT_ID` and `PLAID_SECRET` are set and correct
 2. Check the bank-sync cron job ran: look in the insights table for recent entries
 3. Trigger manually in the chat: *"sync my transactions"*
-4. Check logs: `docker-compose logs api`
+4. Check logs: `docker compose logs api`
 
 ---
 
@@ -1766,8 +1794,8 @@ Look for `"anthropic": { "configured": true }` in the `integrations` block.
 Ensure the Redis container is running:
 
 ```bash
-docker-compose ps redis
-docker-compose up -d redis
+docker compose ps redis
+docker compose up -d redis
 ```
 
 ---
@@ -1851,7 +1879,7 @@ taskkill /PID <PID> /F
 
 # OpenClaw — Personal AI Assistant
 
-The rest of this README covers **OpenClaw** — the AI assistant framework that ClawFinance is built on.
+**OpenClaw is the agent framework that powers ClawFinance — and it's already in this repo. No separate clone or install needed.**
 
 <p align="center">
   <a href="https://github.com/openclaw/openclaw/actions/workflows/ci.yml?branch=main"><img src="https://img.shields.io/github/actions/workflow/status/openclaw/openclaw/ci.yml?branch=main&style=for-the-badge" alt="CI status"></a>
@@ -1864,12 +1892,26 @@ The rest of this README covers **OpenClaw** — the AI assistant framework that 
 
 [Website](https://openclaw.ai) · [Docs](https://docs.openclaw.ai) · [Getting Started](https://docs.openclaw.ai/start/getting-started) · [Discord](https://discord.gg/clawd)
 
-## OpenClaw Install
+## OpenClaw in this repo
+
+This repository ships OpenClaw and ClawFinance together as one thing. The repo root **is** the OpenClaw source — `clawfinance/` sits on top of it and adds the finance-specific API, UI, database, MCP servers, and skills.
+
+You don't install OpenClaw separately. To run the agent from source:
 
 ```bash
-npm install -g openclaw@latest
-openclaw onboard --install-daemon
+# From the repo root (after running setup.sh or docker compose up for ClawFinance services):
+pnpm install
+pnpm build
+pnpm run dev    # starts the OpenClaw gateway + skill runner
 ```
+
+Or run OpenClaw in Docker alongside ClawFinance:
+
+```bash
+docker compose --profile gateway up -d
+```
+
+> **Note:** The Docker gateway profile requires an `OPENCLAW_IMAGE` (a pre-built OpenClaw container). For most users, running OpenClaw locally with `pnpm run dev` is simpler.
 
 ## OpenClaw Highlights
 
@@ -1880,16 +1922,6 @@ openclaw onboard --install-daemon
 - **[MCP servers](https://docs.openclaw.ai/tools)** — plug in any Model Context Protocol data source
 - **[Voice Wake + Talk Mode](https://docs.openclaw.ai/nodes/voicewake)** — always-on speech on macOS/iOS/Android
 - **[Live Canvas](https://docs.openclaw.ai/platforms/mac/canvas)** — agent-driven visual workspace
-
-## From Source
-
-```bash
-git clone https://github.com/openclaw/openclaw.git
-cd openclaw
-pnpm install
-pnpm build
-pnpm openclaw onboard --install-daemon
-```
 
 ## Security
 
