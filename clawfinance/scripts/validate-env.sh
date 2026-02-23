@@ -4,7 +4,13 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_FILE="$(cd "$SCRIPT_DIR/.." && pwd)/.env"
+# .env lives at repo root (two levels up). Fall back to clawfinance/.env for compat.
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+if [ -f "$REPO_ROOT/.env" ]; then
+  ENV_FILE="$REPO_ROOT/.env"
+else
+  ENV_FILE="$(cd "$SCRIPT_DIR/.." && pwd)/.env"
+fi
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
@@ -23,7 +29,7 @@ if [ -f "$ENV_FILE" ]; then
   set +o allexport
 else
   echo -e "${RED}[error]${RESET} .env file not found at $ENV_FILE"
-  echo "  Run: cp clawfinance/.env.example clawfinance/.env"
+  echo "  Run: cp .env.example .env   (from the repo root)"
   exit 1
 fi
 
@@ -113,7 +119,7 @@ echo ""
 # ─── Result ───────────────────────────────────────────────────────────────────
 if [ $ERRORS -gt 0 ]; then
   echo -e "${RED}${BOLD}$ERRORS required variable(s) missing or using placeholder values.${RESET}"
-  echo "Edit clawfinance/.env and re-run this script."
+  echo "Edit .env (repo root) and re-run this script."
   exit 1
 else
   echo -e "${GREEN}${BOLD}Required variables OK. ClawFinance can start.${RESET}"

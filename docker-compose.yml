@@ -1,16 +1,126 @@
+# ClawFinance + OpenClaw — unified compose
+#
+# ClawFinance services start by default.
+# OpenClaw agent containers are optional (most users run OpenClaw locally from source).
+#
+# Quick start:
+#   docker compose up -d                    # start ClawFinance (Postgres, Redis, API, UI)
+#   docker compose --profile gateway up -d  # also start OpenClaw gateway + CLI in Docker
+#
+# Stop:
+#   docker compose down
+
 services:
+
+  # ── ClawFinance — Data Layer ──────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: clawfinance
+      POSTGRES_USER: clawfinance
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./clawfinance/db/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clawfinance"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── ClawFinance — API Server ──────────────────────────────────────────────────
+
+  api:
+    build: ./clawfinance/api
+    restart: unless-stopped
+    environment:
+      # Core
+      DATABASE_URL: postgres://clawfinance:${DB_PASSWORD}@postgres:5432/clawfinance
+      REDIS_URL: redis://redis:6379
+      DB_ENCRYPTION_KEY: ${DB_ENCRYPTION_KEY}
+      CLAWFINANCE_API_KEY: ${CLAWFINANCE_API_KEY}
+      NODE_ENV: production
+      # Banking
+      PLAID_CLIENT_ID: ${PLAID_CLIENT_ID:-}
+      PLAID_SECRET: ${PLAID_SECRET:-}
+      PLAID_ENV: ${PLAID_ENV:-sandbox}
+      # Investments
+      SNAPTRADE_CLIENT_ID: ${SNAPTRADE_CLIENT_ID:-}
+      SNAPTRADE_CONSUMER_KEY: ${SNAPTRADE_CONSUMER_KEY:-}
+      # Market data
+      FINNHUB_API_KEY: ${FINNHUB_API_KEY:-}
+      # Tax
+      AZURE_DOC_INTEL_ENDPOINT: ${AZURE_DOC_INTEL_ENDPOINT:-}
+      AZURE_DOC_INTEL_KEY: ${AZURE_DOC_INTEL_KEY:-}
+      TAXBANDITS_API_KEY: ${TAXBANDITS_API_KEY:-}
+      # Research & Sentiment
+      TWITTER_API_KEY: ${TWITTER_API_KEY:-}
+      TWITTER_API_SECRET: ${TWITTER_API_SECRET:-}
+      TWITTER_ACCESS_TOKEN: ${TWITTER_ACCESS_TOKEN:-}
+      TWITTER_ACCESS_SECRET: ${TWITTER_ACCESS_SECRET:-}
+      SERPAPI_KEY: ${SERPAPI_KEY:-}
+      # AI
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── ClawFinance — React UI (nginx) ────────────────────────────────────────────
+
+  # UI uses nginx to serve static files and proxy /api + /ws to the API container.
+  # VITE_API_URL is empty so all API calls use relative paths, proxied by nginx.
+  ui:
+    build:
+      context: ./clawfinance/ui
+      args:
+        VITE_API_URL: ""
+        VITE_WS_URL: "/ws"
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+  # ── OpenClaw — Agent Layer (optional profile) ─────────────────────────────────
+  #
+  # These containers run a pre-built OpenClaw image. They are only needed if you
+  # want to run the OpenClaw agent in Docker rather than locally from source.
+  #
+  # Requires: OPENCLAW_IMAGE, OPENCLAW_GATEWAY_TOKEN in .env
+  # Run with: docker compose --profile gateway up -d
+
   openclaw-gateway:
+    profiles: ["gateway"]
     image: ${OPENCLAW_IMAGE:-openclaw:local}
     environment:
       HOME: /home/node
       TERM: xterm-256color
-      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
-      CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY}
-      CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
-      CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
+      CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY:-}
+      CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY:-}
+      CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE:-}
     volumes:
-      - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_CONFIG_DIR:-.}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-.}:/home/node/.openclaw/workspace
     ports:
       - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
@@ -28,19 +138,23 @@ services:
       ]
 
   openclaw-cli:
+    profiles: ["gateway"]
     image: ${OPENCLAW_IMAGE:-openclaw:local}
     environment:
       HOME: /home/node
       TERM: xterm-256color
-      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
       BROWSER: echo
-      CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY}
-      CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
-      CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
+      CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY:-}
+      CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY:-}
+      CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE:-}
     volumes:
-      - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_CONFIG_DIR:-.}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-.}:/home/node/.openclaw/workspace
     stdin_open: true
     tty: true
     init: true
     entrypoint: ["node", "dist/index.js"]
+
+volumes:
+  pgdata:

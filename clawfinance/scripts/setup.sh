@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# ClawFinance Setup Script
+# ClawFinance Setup Script (legacy entry point — prefer: bash setup.sh from repo root)
 # Usage: bash clawfinance/scripts/setup.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# ROOT = repo root (two levels up from clawfinance/scripts/)
+ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# Subdir containing ClawFinance application code
+CF="$ROOT/clawfinance"
 
 # ─── Colors ───────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
@@ -77,11 +80,11 @@ install_deps() {
   fi
 }
 
-install_deps "$ROOT/api" "API"
-install_deps "$ROOT/ui" "UI"
+install_deps "$CF/api" "API"
+install_deps "$CF/ui" "UI"
 
 # Install MCP server deps
-for mcp_dir in "$ROOT/mcp-servers"/*/; do
+for mcp_dir in "$CF/mcp-servers"/*/; do
   if [ -f "$mcp_dir/package.json" ]; then
     mcp_name=$(basename "$mcp_dir")
     install_deps "$mcp_dir" "$mcp_name"

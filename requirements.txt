@@ -1,0 +1,14 @@
+# Python dependencies for ClawFinance skill scripts
+# skills/skill-*/scripts/*.py
+#
+# Install: pip install -r requirements.txt
+# (Python 3.9+ required)
+
+# PostgreSQL adapter — used by all scripts that write to the DB
+psycopg2-binary>=2.9
+
+# HTTP client — used by sync scripts calling external APIs
+requests>=2.31
+
+# Anthropic SDK — used by research/insight scripts that call Claude directly
+anthropic>=0.40
