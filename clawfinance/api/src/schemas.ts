@@ -141,6 +141,25 @@ export const updateCategorySchema = z.object({
 
 export const categoryParamsSchema = uuidParam;
 
+// ─── Flinks Connector ──────────────────────────────────────────────────────
+
+export const flinksAuthorizeSchema = z.object({
+  institution: z.string().trim().min(1).max(255),
+  username: z.string().trim().min(1).max(255),
+  password: z.string().min(1).max(255),
+});
+
+export const flinksMfaSchema = z.object({
+  request_id: z.string().uuid(),
+  responses: z.record(z.string(), z.string()),
+});
+
+export const flinksSyncSchema = z.object({
+  force: z.boolean().default(false),
+});
+
+export const flinksConnectionParamsSchema = uuidParam;
+
 // ─── Data Export/Import ─────────────────────────────────────────────────────
 
 export const dataExportSchema = z.object({

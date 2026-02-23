@@ -18,6 +18,7 @@ import preferencesRouter from "./routes/preferences.js";
 import goalsRouter from "./routes/goals.js";
 import categoriesRouter from "./routes/categories.js";
 import dataRouter from "./routes/data.js";
+import flinksRouter from "./routes/connectors/flinks.js";
 
 export function createApp() {
   const app = express();
@@ -64,6 +65,9 @@ export function createApp() {
 
   // Data management routes
   app.use("/api/data", dataRouter);
+
+  // Custom connectors
+  app.use("/api/connectors/flinks", flinksRouter);
 
   // 404 fallback
   app.use((_req, res) => res.status(404).json({ error: "Not found" }));
