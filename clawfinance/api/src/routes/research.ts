@@ -3,7 +3,51 @@ import { pool } from "../services/db.js";
 
 const router = Router();
 
+// GET /api/research/portfolio-news — recent news for all active holdings
+// NOTE: must be declared before /:ticker to avoid being shadowed
+router.get("/portfolio-news", async (_req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT cn.ticker_symbol, cn.headline, cn.source, cn.url,
+             cn.published_at, cn.sentiment_score, cn.source_type,
+             h.security_name
+      FROM company_news cn
+      JOIN holdings h ON h.ticker_symbol = cn.ticker_symbol
+      JOIN accounts a ON h.account_id = a.id
+      WHERE a.is_active = true
+        AND cn.published_at > NOW() - INTERVAL '7 days'
+      ORDER BY cn.published_at DESC
+      LIMIT 50
+    `);
+    res.json({ data: result.rows });
+  } catch (err) {
+    console.error("[research/portfolio-news] error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /api/research/sentiment/:ticker — sentiment history
+router.get("/sentiment/:ticker", async (req, res) => {
+  const ticker = req.params.ticker.toUpperCase();
+  try {
+    const result = await pool.query(
+      `SELECT snapshot_date, twitter_sentiment, composite_score,
+              tweet_volume, bull_tweets, bear_tweets
+       FROM sentiment_snapshots
+       WHERE ticker_symbol = $1
+       ORDER BY snapshot_date DESC
+       LIMIT 90`,
+      [ticker]
+    );
+    res.json({ data: result.rows });
+  } catch (err) {
+    console.error("[research/sentiment] error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // GET /api/research/:ticker — aggregated research data for a ticker
+// NOTE: must be declared LAST — all static routes must come before this
 router.get("/:ticker", async (req, res) => {
   const ticker = req.params.ticker.toUpperCase();
   try {
@@ -60,48 +104,6 @@ router.get("/:ticker", async (req, res) => {
     });
   } catch (err) {
     console.error("[research] error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// GET /api/research/portfolio-news — recent news for all active holdings
-router.get("/portfolio-news", async (_req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT cn.ticker_symbol, cn.headline, cn.source, cn.url,
-             cn.published_at, cn.sentiment_score, cn.source_type,
-             h.security_name
-      FROM company_news cn
-      JOIN holdings h ON h.ticker_symbol = cn.ticker_symbol
-      JOIN accounts a ON h.account_id = a.id
-      WHERE a.is_active = true
-        AND cn.published_at > NOW() - INTERVAL '7 days'
-      ORDER BY cn.published_at DESC
-      LIMIT 50
-    `);
-    res.json({ data: result.rows });
-  } catch (err) {
-    console.error("[research/portfolio-news] error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// GET /api/research/sentiment/:ticker — sentiment history
-router.get("/sentiment/:ticker", async (req, res) => {
-  const ticker = req.params.ticker.toUpperCase();
-  try {
-    const result = await pool.query(
-      `SELECT snapshot_date, twitter_sentiment, composite_score,
-              tweet_volume, bull_tweets, bear_tweets
-       FROM sentiment_snapshots
-       WHERE ticker_symbol = $1
-       ORDER BY snapshot_date DESC
-       LIMIT 90`,
-      [ticker]
-    );
-    res.json({ data: result.rows });
-  } catch (err) {
-    console.error("[research/sentiment] error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

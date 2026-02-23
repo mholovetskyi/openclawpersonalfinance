@@ -1,0 +1,286 @@
+name: ClawFinance CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "clawfinance/**"
+      - "skills/**"
+      - "setup.sh"
+      - "requirements.txt"
+      - ".openclaw.json"
+      - ".env.example"
+      - ".github/workflows/clawfinance-ci.yml"
+  pull_request:
+    paths:
+      - "clawfinance/**"
+      - "skills/**"
+      - "setup.sh"
+      - "requirements.txt"
+      - ".openclaw.json"
+      - ".env.example"
+      - ".github/workflows/clawfinance-ci.yml"
+
+concurrency:
+  group: clawfinance-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # ─── API unit tests (Vitest + Supertest, no real DB) ─────────────────────────
+  api-unit-tests:
+    name: API unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clawfinance/api
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "npm"
+          cache-dependency-path: clawfinance/api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type-check
+        run: npx tsc --noEmit
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage
+          path: clawfinance/api/coverage/
+          retention-days: 7
+
+  # ─── MCP server TypeScript checks ────────────────────────────────────────────
+  mcp-typecheck:
+    name: MCP servers — tsc
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Type-check each MCP server
+        shell: bash
+        run: |
+          set -euo pipefail
+          FAIL=0
+          for mcp_dir in clawfinance/mcp-servers/*/; do
+            name=$(basename "$mcp_dir")
+            echo "→ $name"
+            if [ ! -f "$mcp_dir/package.json" ]; then
+              echo "  ✗ package.json missing"
+              FAIL=1
+              continue
+            fi
+            (cd "$mcp_dir" && npm install --prefer-offline --silent 2>/dev/null || npm install --silent)
+            if [ -f "$mcp_dir/tsconfig.json" ]; then
+              if (cd "$mcp_dir" && npx tsc --noEmit 2>&1); then
+                echo "  ✓ TypeScript OK"
+              else
+                echo "  ✗ TypeScript errors"
+                FAIL=1
+              fi
+            else
+              echo "  ~ no tsconfig.json — skipped"
+            fi
+          done
+          exit $FAIL
+
+  # ─── Python skills syntax check ───────────────────────────────────────────────
+  python-syntax:
+    name: Python skills — syntax
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check Python syntax (py_compile)
+        shell: bash
+        run: |
+          set -euo pipefail
+          FAIL=0
+          while IFS= read -r -d '' pyfile; do
+            if python3 -m py_compile "$pyfile" 2>/dev/null; then
+              echo "  ✓ $(basename "$pyfile")"
+            else
+              echo "  ✗ $(basename "$pyfile") — syntax error"
+              FAIL=1
+            fi
+          done < <(find skills -name "*.py" -print0 2>/dev/null)
+          exit $FAIL
+
+  # ─── Config / JSON validation ─────────────────────────────────────────────────
+  config-validation:
+    name: Config & JSON validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate .openclaw.json
+        run: python3 -m json.tool .openclaw.json > /dev/null
+
+      - name: Verify all 7 MCP servers registered
+        shell: bash
+        run: |
+          set -euo pipefail
+          FAIL=0
+          for mcp in plaid snaptrade finnhub sec azure-doc-intel twitter altdata; do
+            if python3 -c "import json,sys; d=json.load(open('.openclaw.json')); sys.exit(0 if '$mcp' in d.get('mcpServers',{}) else 1)"; then
+              echo "  ✓ MCP '$mcp' registered"
+            else
+              echo "  ✗ MCP '$mcp' missing"
+              FAIL=1
+            fi
+          done
+          exit $FAIL
+
+      - name: Verify cron jobs (≥8)
+        run: |
+          count=$(python3 -c "import json; d=json.load(open('.openclaw.json')); print(len(d.get('cron',{}).get('jobs',[])))")
+          echo "Cron jobs: $count"
+          [ "$count" -ge 8 ] || (echo "Expected ≥8 cron jobs, found $count" && exit 1)
+
+      - name: Validate MCP server package.json files
+        shell: bash
+        run: |
+          set -euo pipefail
+          FAIL=0
+          for pkg in clawfinance/mcp-servers/*/package.json; do
+            name=$(basename "$(dirname "$pkg")")
+            if python3 -m json.tool "$pkg" > /dev/null 2>&1; then
+              if python3 -c "import json; d=json.load(open('$pkg')); assert 'build' in d.get('scripts',{})"; then
+                echo "  ✓ $name — valid JSON + has build script"
+              else
+                echo "  ✗ $name — missing 'build' script"
+                FAIL=1
+              fi
+            else
+              echo "  ✗ $name — invalid JSON"
+              FAIL=1
+            fi
+          done
+          exit $FAIL
+
+      - name: Validate .env.example completeness
+        shell: bash
+        run: |
+          set -euo pipefail
+          REQUIRED=(DB_PASSWORD DB_ENCRYPTION_KEY CLAWFINANCE_API_KEY PLAID_CLIENT_ID PLAID_SECRET SNAPTRADE_CLIENT_ID SNAPTRADE_CONSUMER_KEY FINNHUB_API_KEY ANTHROPIC_API_KEY)
+          FAIL=0
+          for key in "${REQUIRED[@]}"; do
+            if grep -q "^${key}=" .env.example || grep -q "# *${key}=" .env.example; then
+              echo "  ✓ $key"
+            else
+              echo "  ✗ $key missing"
+              FAIL=1
+            fi
+          done
+          exit $FAIL
+
+      - name: Shell script syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          FAIL=0
+          for f in setup.sh clawfinance/scripts/setup.sh clawfinance/scripts/validate-env.sh; do
+            if [ -f "$f" ]; then
+              if bash -n "$f" 2>/dev/null; then
+                echo "  ✓ $f"
+              else
+                echo "  ✗ $f — syntax error"
+                FAIL=1
+              fi
+            else
+              echo "  ~ $f — not found (skipped)"
+            fi
+          done
+          exit $FAIL
+
+  # ─── E2E shell validation (runs e2e.sh) ───────────────────────────────────────
+  e2e-validation:
+    name: E2E shell validation
+    runs-on: ubuntu-latest
+    # Needs Node for tsc checks inside e2e.sh
+    needs: [api-unit-tests]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API deps (needed for tsc check in e2e.sh)
+        run: npm ci
+        working-directory: clawfinance/api
+
+      - name: Make e2e.sh executable and run
+        run: |
+          chmod +x clawfinance/test/e2e.sh
+          bash clawfinance/test/e2e.sh
+
+  # ─── Required status gate ─────────────────────────────────────────────────────
+  clawfinance-ci-gate:
+    name: ClawFinance CI ✓
+    needs:
+      - api-unit-tests
+      - mcp-typecheck
+      - python-syntax
+      - config-validation
+      - e2e-validation
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          results='${{ toJSON(needs) }}'
+          failed=$(echo "$results" | python3 -c "
+          import json, sys
+          needs = json.load(sys.stdin)
+          failures = [name for name, job in needs.items() if job['result'] not in ('success', 'skipped')]
+          if failures:
+              print('FAILED jobs: ' + ', '.join(failures))
+              sys.exit(1)
+          print('All ClawFinance CI jobs passed.')
+          ")
+          echo "$failed"

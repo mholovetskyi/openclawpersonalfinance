@@ -1,5 +1,5 @@
 import { Router } from "express";
-import net from "net";
+import net from "node:net";
 import { pool } from "../services/db.js";
 
 const router = Router();
