@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { pool } from "../services/db.js";
 import { broadcast } from "../services/websocket.js";
+import { validate } from "../middleware/validate.js";
+import { insightsQuerySchema, patchInsightSchema, insightParamsSchema } from "../schemas.js";
 
 const router = Router();
 
 // GET /api/insights?status=new
-router.get("/", async (req, res) => {
+router.get("/", validate({ query: insightsQuerySchema }), async (req, res) => {
   try {
     const { status } = req.query;
     const params: unknown[] = [];
@@ -28,16 +30,10 @@ router.get("/", async (req, res) => {
 });
 
 // PATCH /api/insights/:id
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", validate({ params: insightParamsSchema, body: patchInsightSchema }), async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-
-    const allowed = ["viewed", "dismissed", "acted_on"];
-    if (!allowed.includes(status)) {
-      res.status(400).json({ error: `status must be one of: ${allowed.join(", ")}` });
-      return;
-    }
 
     const timestampCol = status === "viewed" ? ", viewed_at = NOW()" : status === "dismissed" ? ", dismissed_at = NOW()" : "";
 

@@ -62,11 +62,17 @@ describe("GET /api/transactions", () => {
   });
 
   it("accepts account_id filter", async () => {
+    const uuid = "550e8400-e29b-41d4-a716-446655440000";
     mockQuery.mockResolvedValueOnce(dbResult([SAMPLE_TX]));
-    const res = await request(app).get("/api/transactions?account_id=acc-1");
+    const res = await request(app).get(`/api/transactions?account_id=${uuid}`);
     expect(res.status).toBe(200);
     const [, params] = mockQuery.mock.calls[0];
-    expect(params).toContain("acc-1");
+    expect(params).toContain(uuid);
+  });
+
+  it("rejects invalid account_id format", async () => {
+    const res = await request(app).get("/api/transactions?account_id=not-a-uuid");
+    expect(res.status).toBe(400);
   });
 
   it("returns 200 with empty array when no transactions", async () => {
@@ -107,12 +113,13 @@ describe("GET /api/transactions/summary", () => {
   it("returns 400 when month param is missing", async () => {
     const res = await request(app).get("/api/transactions/summary");
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/month/i);
+    expect(res.body.error).toBeDefined();
   });
 
   it("returns 500 on DB error", async () => {
-    mockQuery.mockRejectedValueOnce(new Error("DB error"));
+    mockQuery.mockRejectedValue(new Error("DB error"));
     const res = await request(app).get("/api/transactions/summary?month=2026-01");
     expect(res.status).toBe(500);
+    mockQuery.mockReset();
   });
 });

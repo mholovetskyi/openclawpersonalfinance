@@ -2,6 +2,8 @@ import { Router } from "express";
 import { pool } from "../services/db.js";
 import { broadcast } from "../services/websocket.js";
 import { randomUUID } from "crypto";
+import { validate } from "../middleware/validate.js";
+import { chatPostSchema, chatHistoryParamsSchema } from "../schemas.js";
 
 const router = Router();
 
@@ -13,12 +15,8 @@ interface ChatMessage {
 }
 
 // POST /api/chat — submit a message; streams back via WebSocket, returns session_id
-router.post("/", async (req, res) => {
-  const { message, session_id } = req.body as { message: string; session_id?: string };
-
-  if (!message?.trim()) {
-    return res.status(400).json({ error: "message is required" });
-  }
+router.post("/", validate({ body: chatPostSchema }), async (req, res) => {
+  const { message, session_id } = req.body;
 
   const sessionId = session_id ?? randomUUID();
 
@@ -65,7 +63,7 @@ router.post("/", async (req, res) => {
 });
 
 // GET /api/chat/history/:session_id
-router.get("/history/:sessionId", async (req, res) => {
+router.get("/history/:sessionId", validate({ params: chatHistoryParamsSchema }), async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT id, role, content, agent, metadata, created_at

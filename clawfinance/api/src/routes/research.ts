@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { pool } from "../services/db.js";
+import { validate } from "../middleware/validate.js";
+import { researchTickerParamsSchema } from "../schemas.js";
 
 const router = Router();
 
@@ -27,7 +29,7 @@ router.get("/portfolio-news", async (_req, res) => {
 });
 
 // GET /api/research/sentiment/:ticker — sentiment history
-router.get("/sentiment/:ticker", async (req, res) => {
+router.get("/sentiment/:ticker", validate({ params: researchTickerParamsSchema }), async (req, res) => {
   const ticker = req.params.ticker.toUpperCase();
   try {
     const result = await pool.query(
@@ -48,7 +50,7 @@ router.get("/sentiment/:ticker", async (req, res) => {
 
 // GET /api/research/:ticker — aggregated research data for a ticker
 // NOTE: must be declared LAST — all static routes must come before this
-router.get("/:ticker", async (req, res) => {
+router.get("/:ticker", validate({ params: researchTickerParamsSchema }), async (req, res) => {
   const ticker = req.params.ticker.toUpperCase();
   try {
     const [newsResult, sentimentResult, altResult] = await Promise.all([

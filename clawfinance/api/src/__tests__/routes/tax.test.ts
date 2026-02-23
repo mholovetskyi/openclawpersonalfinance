@@ -108,10 +108,11 @@ describe("POST /api/tax/documents/upload", () => {
   });
 
   it("returns 400 when form_type is missing", async () => {
-    // This test passes a dummy file but omits form_type
+    // Send a buffer with valid PDF magic bytes but omit form_type
+    const pdfBuffer = Buffer.from("%PDF-1.4 dummy pdf content");
     const res = await request(app)
       .post("/api/tax/documents/upload")
-      .attach("file", Buffer.from("dummy pdf content"), { filename: "test.pdf", contentType: "application/pdf" });
+      .attach("file", pdfBuffer, { filename: "test.pdf", contentType: "application/pdf" });
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/form_type/i);
   });

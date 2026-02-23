@@ -6,12 +6,14 @@ import {
   FileText,
   Newspaper,
   Settings,
+  Target,
 } from "lucide-react";
 
 const NAV = [
   { to: "/", icon: LayoutDashboard, label: "Net Worth" },
   { to: "/portfolio", icon: TrendingUp, label: "Portfolio" },
   { to: "/transactions", icon: CreditCard, label: "Transactions" },
+  { to: "/goals", icon: Target, label: "Goals" },
   { to: "/tax", icon: FileText, label: "Tax Center" },
   { to: "/research", icon: Newspaper, label: "Research" },
 ];

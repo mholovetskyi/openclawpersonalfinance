@@ -15,8 +15,11 @@ const app = makeApp("/api/budgets", budgetsRouter);
 
 // ── Fixtures ───────────────────────────────────────────────────────────────────
 
+const VALID_UUID = "550e8400-e29b-41d4-a716-446655440000";
+const VALID_UUID_2 = "550e8400-e29b-41d4-a716-446655440001";
+
 const BUDGET = {
-  id: "bgt-1",
+  id: VALID_UUID,
   category: "Groceries",
   monthly_limit: 500,
   is_active: true,
@@ -67,13 +70,13 @@ describe("POST /api/budgets", () => {
   it("returns 400 when category is missing", async () => {
     const res = await request(app).post("/api/budgets").send({ monthly_limit: 500 });
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/category/i);
+    expect(res.body.error).toBe("Validation failed");
   });
 
   it("returns 400 when monthly_limit is missing", async () => {
     const res = await request(app).post("/api/budgets").send({ category: "Groceries" });
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/monthly_limit/i);
+    expect(res.body.error).toBe("Validation failed");
   });
 
   it("returns 500 on DB error", async () => {
@@ -92,29 +95,29 @@ describe("PUT /api/budgets/:id", () => {
     const updated = { ...BUDGET, monthly_limit: 600 };
     mockQuery.mockResolvedValueOnce(dbResult([updated], 1));
     const res = await request(app)
-      .put("/api/budgets/bgt-1")
+      .put(`/api/budgets/${VALID_UUID}`)
       .send({ monthly_limit: 600 });
     expect(res.status).toBe(200);
     expect(res.body.data.monthly_limit).toBe(600);
   });
 
   it("returns 400 when monthly_limit is missing", async () => {
-    const res = await request(app).put("/api/budgets/bgt-1").send({});
+    const res = await request(app).put(`/api/budgets/${VALID_UUID}`).send({});
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/monthly_limit/i);
+    expect(res.body.error).toBe("Validation failed");
   });
 
   it("returns 404 when budget does not exist", async () => {
     mockQuery.mockResolvedValueOnce(dbResult([], 0));
     const res = await request(app)
-      .put("/api/budgets/nonexistent")
+      .put(`/api/budgets/${VALID_UUID_2}`)
       .send({ monthly_limit: 600 });
     expect(res.status).toBe(404);
   });
 
   it("returns 500 on DB error", async () => {
     mockQuery.mockRejectedValueOnce(new Error("DB error"));
-    const res = await request(app).put("/api/budgets/bgt-1").send({ monthly_limit: 600 });
+    const res = await request(app).put(`/api/budgets/${VALID_UUID}`).send({ monthly_limit: 600 });
     expect(res.status).toBe(500);
   });
 });
@@ -123,20 +126,20 @@ describe("DELETE /api/budgets/:id", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("soft-deletes and returns 204", async () => {
-    mockQuery.mockResolvedValueOnce(dbResult([{ id: "bgt-1" }], 1));
-    const res = await request(app).delete("/api/budgets/bgt-1");
+    mockQuery.mockResolvedValueOnce(dbResult([{ id: VALID_UUID }], 1));
+    const res = await request(app).delete(`/api/budgets/${VALID_UUID}`);
     expect(res.status).toBe(204);
   });
 
   it("returns 404 when budget does not exist", async () => {
     mockQuery.mockResolvedValueOnce(dbResult([], 0));
-    const res = await request(app).delete("/api/budgets/nonexistent");
+    const res = await request(app).delete(`/api/budgets/${VALID_UUID_2}`);
     expect(res.status).toBe(404);
   });
 
   it("returns 500 on DB error", async () => {
     mockQuery.mockRejectedValueOnce(new Error("DB error"));
-    const res = await request(app).delete("/api/budgets/bgt-1");
+    const res = await request(app).delete(`/api/budgets/${VALID_UUID}`);
     expect(res.status).toBe(500);
   });
 });

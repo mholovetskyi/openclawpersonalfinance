@@ -100,11 +100,12 @@ describe("GET /api/portfolio/holdings", () => {
   });
 
   it("filters by account_id", async () => {
+    const uuid = "550e8400-e29b-41d4-a716-446655440000";
     mockQuery.mockResolvedValueOnce(dbResult([HOLDING]));
-    const res = await request(app).get("/api/portfolio/holdings?account_id=acc-1");
+    const res = await request(app).get(`/api/portfolio/holdings?account_id=${uuid}`);
     expect(res.status).toBe(200);
     const [, params] = mockQuery.mock.calls[0];
-    expect(params).toContain("acc-1");
+    expect(params).toContain(uuid);
   });
 
   it("returns empty array when no holdings", async () => {

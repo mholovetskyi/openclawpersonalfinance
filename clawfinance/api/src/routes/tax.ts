@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { pool } from "../services/db.js";
 import multer from "multer";
+import { validate } from "../middleware/validate.js";
+import { validateUpload } from "../middleware/uploadSecurity.js";
+import { taxDocsQuerySchema, taxUploadBodySchema, taxDeductionsQuerySchema } from "../schemas.js";
 import path from "node:path";
 import { mkdirSync } from "node:fs";
 
@@ -29,7 +32,7 @@ router.get("/estimate", async (_req, res) => {
 });
 
 // GET /api/tax/documents
-router.get("/documents", async (req, res) => {
+router.get("/documents", validate({ query: taxDocsQuerySchema }), async (req, res) => {
   try {
     const { year } = req.query;
     const params: unknown[] = [];
@@ -49,7 +52,7 @@ router.get("/documents", async (req, res) => {
 });
 
 // POST /api/tax/documents/upload — multipart PDF upload
-router.post("/documents/upload", upload.single("file"), async (req, res) => {
+router.post("/documents/upload", upload.single("file"), validateUpload, async (req, res) => {
   try {
     if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
     const { form_type, year } = req.body;
@@ -72,7 +75,7 @@ router.post("/documents/upload", upload.single("file"), async (req, res) => {
 });
 
 // GET /api/tax/deductions
-router.get("/deductions", async (req, res) => {
+router.get("/deductions", validate({ query: taxDeductionsQuerySchema }), async (req, res) => {
   try {
     const { year } = req.query;
     const params: unknown[] = [year ? Number(year) : new Date().getFullYear()];

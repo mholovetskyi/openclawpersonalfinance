@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { pool } from "../services/db.js";
+import { validate } from "../middleware/validate.js";
+import { holdingsQuerySchema } from "../schemas.js";
 
 const router = Router();
 
@@ -47,7 +49,7 @@ router.get("/", async (_req, res) => {
 });
 
 // GET /api/holdings — all positions
-router.get("/holdings", async (req, res) => {
+router.get("/holdings", validate({ query: holdingsQuerySchema }), async (req, res) => {
   try {
     const { type, account_id } = req.query;
     const conditions: string[] = ["a.is_active = true"];

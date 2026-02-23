@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { pool } from "../services/db.js";
+import { validate } from "../middleware/validate.js";
+import { createBudgetSchema, updateBudgetSchema, budgetParamsSchema } from "../schemas.js";
 
 const router = Router();
 
@@ -41,13 +43,9 @@ router.get("/", async (_req, res) => {
 });
 
 // POST /api/budgets — create a budget
-router.post("/", async (req, res) => {
+router.post("/", validate({ body: createBudgetSchema }), async (req, res) => {
   try {
     const { category, monthly_limit } = req.body;
-    if (!category || monthly_limit == null) {
-      res.status(400).json({ error: "category and monthly_limit are required" });
-      return;
-    }
 
     const result = await pool.query(
       `INSERT INTO budgets (category, monthly_limit)
@@ -55,7 +53,7 @@ router.post("/", async (req, res) => {
        ON CONFLICT (user_id, category)
        DO UPDATE SET monthly_limit = EXCLUDED.monthly_limit, is_active = true
        RETURNING *`,
-      [category, Number(monthly_limit)]
+      [category, monthly_limit]
     );
 
     res.status(201).json({ data: result.rows[0] });
@@ -66,19 +64,14 @@ router.post("/", async (req, res) => {
 });
 
 // PUT /api/budgets/:id — update monthly limit
-router.put("/:id", async (req, res) => {
+router.put("/:id", validate({ params: budgetParamsSchema, body: updateBudgetSchema }), async (req, res) => {
   try {
     const { id } = req.params;
     const { monthly_limit } = req.body;
 
-    if (monthly_limit == null) {
-      res.status(400).json({ error: "monthly_limit is required" });
-      return;
-    }
-
     const result = await pool.query(
       `UPDATE budgets SET monthly_limit = $1 WHERE id = $2 RETURNING *`,
-      [Number(monthly_limit), id]
+      [monthly_limit, id]
     );
 
     if (result.rowCount === 0) {
@@ -94,7 +87,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE /api/budgets/:id — soft-delete
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", validate({ params: budgetParamsSchema }), async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(

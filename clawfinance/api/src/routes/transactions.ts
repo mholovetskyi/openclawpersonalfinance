@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { pool } from "../services/db.js";
+import { validate } from "../middleware/validate.js";
+import { transactionsQuerySchema, transactionsSummaryQuerySchema } from "../schemas.js";
 
 const router = Router();
 
 // GET /api/transactions?start=YYYY-MM-DD&end=YYYY-MM-DD&category=Food&limit=50&offset=0
-router.get("/", async (req, res) => {
+router.get("/", validate({ query: transactionsQuerySchema }), async (req, res) => {
   try {
-    const { start, end, category, account_id, limit = "50", offset = "0" } = req.query;
+    const { start, end, category, account_id, limit = 50, offset = 0 } = req.query as any;
 
     const conditions: string[] = [];
     const params: unknown[] = [];
@@ -40,13 +42,9 @@ router.get("/", async (req, res) => {
 });
 
 // GET /api/transactions/summary?month=2026-02
-router.get("/summary", async (req, res) => {
+router.get("/summary", validate({ query: transactionsSummaryQuerySchema }), async (req, res) => {
   try {
-    const { month } = req.query;
-    if (!month || typeof month !== "string") {
-      res.status(400).json({ error: "month parameter required (YYYY-MM)" });
-      return;
-    }
+    const month = req.query.month as string;
 
     const [year, mon] = month.split("-").map(Number);
     const startDate = new Date(year, mon - 1, 1).toISOString().slice(0, 10);
