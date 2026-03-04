@@ -111,7 +111,7 @@ describe("GET /api/research/portfolio-news", () => {
 
   it("returns 200 with portfolio news (route not shadowed by :ticker)", async () => {
     mockQuery.mockResolvedValueOnce(dbResult([
-      { ticker_symbol: "AAPL", headline: "Apple news", security_name: "Apple Inc.", ...NEWS_ITEM },
+      { ...NEWS_ITEM, ticker_symbol: "AAPL", headline: "Apple news", security_name: "Apple Inc." },
     ]));
     const res = await request(app).get("/api/research/portfolio-news");
     expect(res.status).toBe(200);
