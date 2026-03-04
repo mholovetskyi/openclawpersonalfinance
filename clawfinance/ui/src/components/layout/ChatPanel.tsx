@@ -38,7 +38,8 @@ export default function ChatPanel() {
 
   // Listen for WebSocket chat messages
   useEffect(() => {
-    const handler = (data: Record<string, unknown>) => {
+    const handler = (raw: unknown) => {
+      const data = raw as Record<string, unknown>;
       if (data.session_id !== sessionId) return;
       setMessages((prev) => [
         ...prev,
@@ -87,7 +88,8 @@ export default function ChatPanel() {
         setLoading((still) => {
           if (still) {
             // Poll for the assistant reply
-            apiFetch(`/api/chat/history/${res.session_id}`).then((h: { data: Array<{ id: string; role: string; content: string; agent: string }> }) => {
+            apiFetch(`/api/chat/history/${res.session_id}`).then((raw: unknown) => {
+              const h = raw as { data: Array<{ id: string; role: string; content: string; agent: string }> };
               const assistantMsgs = (h.data ?? []).filter((m) => m.role === "assistant");
               if (assistantMsgs.length > 0) {
                 const last = assistantMsgs[assistantMsgs.length - 1];
