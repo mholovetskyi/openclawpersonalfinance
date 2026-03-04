@@ -52,6 +52,15 @@
       "env": {
         "SERPAPI_KEY": "${SERPAPI_KEY}"
       }
+    },
+    "flinks": {
+      "command": "node",
+      "args": ["./clawfinance/mcp-servers/mcp-flinks/dist/index.js"],
+      "env": {
+        "FLINKS_CUSTOMER_ID": "${FLINKS_CUSTOMER_ID}",
+        "FLINKS_INSTANCE": "${FLINKS_INSTANCE}",
+        "FLINKS_AUTH_KEY": "${FLINKS_AUTH_KEY}"
+      }
     }
   },
 
@@ -76,7 +85,7 @@
       {
         "id": "bank-sync",
         "schedule": "0 */6 * * *",
-        "task": "Sync bank transactions: run python3 skills/skill-data-ingestion/scripts/sync_plaid.py, then python3 skills/skill-budget/scripts/categorize_transactions.py. Log result.",
+        "task": "Sync bank transactions: run python3 skills/skill-data-ingestion/scripts/sync_plaid.py, then python3 skills/skill-data-ingestion/scripts/sync_flinks.py, then python3 skills/skill-budget/scripts/categorize_transactions.py. Log result.",
         "agentId": "finance-orchestrator"
       },
       {

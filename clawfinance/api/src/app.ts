@@ -10,6 +10,7 @@ import portfolioRouter from "./routes/portfolio.js";
 import taxRouter from "./routes/tax.js";
 import researchRouter from "./routes/research.js";
 import chatRouter from "./routes/chat.js";
+import flinksRouter from "./routes/flinks.js";
 import healthRouter from "./routes/health.js";
 
 export function createApp() {
@@ -37,6 +38,7 @@ export function createApp() {
   app.use("/api/tax", taxRouter);
   app.use("/api/research", researchRouter);
   app.use("/api/chat", chatRouter);
+  app.use("/api/flinks", flinksRouter);
 
   // 404 fallback
   app.use((_req, res) => res.status(404).json({ error: "Not found" }));
