@@ -11,7 +11,7 @@ if (!CLIENT_ID || !CONSUMER_KEY) {
   process.exit(1);
 }
 
-const snaptrade = new Snaptrade({ clientId: CLIENT_ID, consumerKey: CONSUMER_KEY });
+const snaptrade = new (Snaptrade as any)({ clientId: CLIENT_ID, consumerKey: CONSUMER_KEY });
 
 const server = new Server(
   { name: "mcp-snaptrade", version: "1.0.0" },

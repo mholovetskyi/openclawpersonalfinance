@@ -66,7 +66,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   let poller;
   if (name === "analyze_tax_document") {
     const fileBuffer = readFileSync(a.file_path);
-    poller = await client.beginAnalyzeDocument(modelId, fileBuffer, { contentType: "application/pdf" });
+    poller = await client.beginAnalyzeDocument(modelId, fileBuffer);
   } else if (name === "analyze_document_url") {
     poller = await client.beginAnalyzeDocumentFromUrl(modelId, a.url);
   } else {
