@@ -254,6 +254,18 @@ jobs:
         run: npm ci
         working-directory: clawfinance/api
 
+      - name: Install UI deps (needed for tsc check in e2e.sh)
+        run: npm install
+        working-directory: clawfinance/ui
+
+      - name: Install MCP server deps (needed for tsc check in e2e.sh)
+        run: |
+          for mcp_dir in clawfinance/mcp-servers/*/; do
+            if [ -f "$mcp_dir/package.json" ]; then
+              (cd "$mcp_dir" && npm install --silent)
+            fi
+          done
+
       - name: Make e2e.sh executable and run
         run: |
           chmod +x clawfinance/test/e2e.sh

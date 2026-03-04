@@ -92,6 +92,9 @@ USER.md
 !.agent/workflows/
 /local/
 package-lock.json
+!clawfinance/api/package-lock.json
+!clawfinance/ui/package-lock.json
+!clawfinance/mcp-servers/*/package-lock.json
 .claude/settings.local.json
 .agents/
 .agents

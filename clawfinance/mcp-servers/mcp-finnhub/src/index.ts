@@ -1,6 +1,7 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+// @ts-ignore: finnhub has no type declarations
 import Finnhub from "finnhub";
 
 const API_KEY = process.env.FINNHUB_API_KEY!;

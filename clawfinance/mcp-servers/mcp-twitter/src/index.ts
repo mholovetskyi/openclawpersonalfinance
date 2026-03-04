@@ -57,7 +57,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
-  const a = args as Record<string, string & number & boolean>;
+  const a = args as Record<string, any>;
 
   switch (name) {
     case "search_tweets": {
